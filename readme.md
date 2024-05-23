@@ -24,6 +24,8 @@ This new `ExpandJson` SMT tries address the above as follows:
 
 - Support to address nested fields, potentially using a dot-based notation (currently only root-level fields are supported).
 - Ability to support specific Map or potentially other fields for schemaless records instead of only whole-record parsing and expansion.
+- Possible ability to control which data types are chosen for each inferred type (e.g. should inferred integers be stored as long instead? etc)
+- Possible ability to control if fields should be inferred as optional vs required
 
 ## Example
 

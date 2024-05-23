@@ -158,12 +158,10 @@ public abstract class ExpandJson<R extends ConnectRecord<R>> implements Transfor
     //  https://cwiki.apache.org/confluence/display/KAFKA/KIP-301%3A+Schema+Inferencing+for+JsonConverter
     //  https://github.com/apache/kafka/pull/5001
 
-    // Current JsonConverter requires their "enveloped" payload; create a method create one using inferSchema() from the KIP-301 proposal
+    // Ideally we could just the JsonConverter with inferred schema support directly (after KIP-301), but for now the current
+    // JsonConverter requires an "enveloped" payload (schema+payload); we will create one using a version of the inferSchema()
+    // from the KIP-301 proposal
     private byte[] getInferredEnvelopeValue(Object value) {
-
-        // Ideally next we could use JsonConverter and infer the schema per KIP-301, but as this is not yet implemented
-        // we will need to pull forward some of their proposed methods to build the schema and then create the enveloped
-        // schema+payload JSON value to then pass to JsonConverter
 
         JsonNode valueJson;
         try {
@@ -200,17 +198,21 @@ public abstract class ExpandJson<R extends ConnectRecord<R>> implements Transfor
 
             case NUMBER:
                 if (jsonValue.isIntegralNumber()) {
-                    if (jsonValue.isBigDecimal())
+                    if (jsonValue.isBigInteger()) // use String for BigIntegers
                         return Schema.OPTIONAL_STRING_SCHEMA;
-                    if (jsonValue.isBigInteger())
-                        return Schema.OPTIONAL_STRING_SCHEMA;
-                    if (jsonValue.isInt())
+                    if (jsonValue.isInt()) // prefer Integer if assumed int
                         return Schema.OPTIONAL_INT32_SCHEMA;
-                    if (jsonValue.isShort())
-                        return Schema.OPTIONAL_INT16_SCHEMA;
+                    if (jsonValue.isShort()) // prefer Integer if assumed short
+                        return Schema.OPTIONAL_INT32_SCHEMA;
+
+                    // otherwise use Long
                     return Schema.OPTIONAL_INT64_SCHEMA;
                 }
                 else {
+                    if (jsonValue.isBigDecimal()) // use String for BigDecimals
+                        return Schema.OPTIONAL_STRING_SCHEMA;
+
+                    // otherwise use Float
                     return Schema.OPTIONAL_FLOAT64_SCHEMA;
                 }
 
